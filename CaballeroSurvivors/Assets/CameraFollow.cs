@@ -7,14 +7,14 @@ public class CameraFollow : MonoBehaviour
     public Vector3 desfase = new Vector3(0f, 0f, -10f); // Mantiene la cámara atrás para que no se pegue
 
     void LateUpdate()
+{
+    if (objetivo != null)
     {
-        if (objetivo != null)
-        {
-            // Calculamos la posición a la que debe ir la cámara
-            Vector3 posicionDeseada = objetivo.position + desfase;
-            // Movemos la cámara de forma fluida hacia allá
-            Vector3 posicionSuave = Vector3.Lerp(transform.position, posicionDeseada, suavizado * Time.deltaTime);
-            transform.position = posicionSuave;
-        }
+        Vector3 posicionDeseada = objetivo.position + desfase;
+        Vector3 posicionSuave = Vector3.Lerp(transform.position, posicionDeseada, suavizado * Time.deltaTime);
+        
+        // Forzamos a que la Z de la cámara SIEMPRE sea -10
+        transform.position = new Vector3(posicionSuave.x, posicionSuave.y, -10f);
     }
+}
 }
