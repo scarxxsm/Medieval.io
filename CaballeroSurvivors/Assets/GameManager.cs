@@ -1,13 +1,14 @@
 using UnityEngine;
-using TMPro; // Necesario para los textos modernos de Unity 6
+using TMPro;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
-    [Header("Configuración de la Ronda")]
-    public float tiempoRonda = 60f;
+    [Header("Configuración de Niveles")]
+    public int nivelActual = 1;
+    public float tiempoPorNivel = 60f; // Cada minuto sube de nivel
     private float cronometro = 0f;
     private bool juegoTerminado = false;
 
@@ -26,9 +27,8 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        Time.timeScale = 1f; // Asegura que el juego corra al reiniciar
+        Time.timeScale = 1f;
         jugador = FindObjectOfType<PlayerController>();
-        
         if (panelFinal != null) panelFinal.SetActive(false);
     }
 
@@ -36,53 +36,47 @@ public class GameManager : MonoBehaviour
     {
         if (juegoTerminado) return;
 
-        // 1. Mostrar las vidas del jugador en pantalla
         if (jugador != null)
         {
             textoVidas.text = "Vidas: " + jugador.vidas;
         }
 
-        // 2. Controlar y mostrar el tiempo restante
+        // Control del reloj del nivel actual
         cronometro += Time.deltaTime;
-        float tiempoRestante = Mathf.Max(0f, tiempoRonda - cronometro);
-        textoTiempo.text = "Tiempo: " + tiempoRestante.ToString("F0") + "s";
+        float tiempoRestante = Mathf.Max(0f, tiempoPorNivel - cronometro);
+        
+        // Formato visual: Muestra el nivel y el tiempo restante para el siguiente
+        textoTiempo.text = "Nivel: " + nivelActual + " | Sig: " + tiempoRestante.ToString("F0") + "s";
 
-        // 3. Condición de Victoria (Sobrevivir el minuto)
+        // Cuando el reloj llega a 0, avanzamos de nivel en lugar de ganar
         if (tiempoRestante <= 0f)
         {
-            TerminarPartida(true);
+            SiguienteNivel();
         }
+    }
+
+    void SiguienteNivel()
+    {
+        nivelActual++;
+        cronometro = 0f; // Reinicia el reloj para el nuevo nivel
+        Debug.LogWarning("¡Subiste al Nivel " + nivelActual + "! La horda se vuelve más fuerte.");
     }
 
     public void PerderJuego()
     {
-        textoVidas.text = "Vidas: 0";
-        TerminarPartida(false);
-    }
-
-    void TerminarPartida(bool gano)
-    {
         juegoTerminado = true;
-        Time.timeScale = 0f; // Congela el juego
+        Time.timeScale = 0f;
         
         if (panelFinal != null) panelFinal.SetActive(true);
 
         if (textoResultado != null)
         {
-            if (gano)
-            {
-                textoResultado.text = "¡VICTORIA!";
-                textoResultado.color = Color.green;
-            }
-            else
-            {
-                textoResultado.text = "GAME OVER";
-                textoResultado.color = Color.red;
-            }
+            // Cambia el mensaje para presumir hasta qué nivel logró sobrevivir
+            textoResultado.text = "PERDISTE EN NIVEL " + nivelActual;
+            textoResultado.color = Color.red;
         }
     }
 
-    // Esta función la usará el botón para volver a jugar
     public void ReiniciarJuego()
     {
         Time.timeScale = 1f;

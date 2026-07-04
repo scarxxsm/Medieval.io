@@ -12,6 +12,11 @@ public class PlayerController : MonoBehaviour
     private float cronometroInvulnerabilidad;
     private bool esInvulnerable = false;
 
+    [Header("Sistema de Disparo")]
+    public GameObject bala_Prefab;
+    public float tiempoEntreDisparosBase = 0.5f; // Ajusta esto en el Inspector (ejemplo: 0.5 o 0.4)
+    private float cronometroDisparo = 0f;
+
     void Start() {
         rb = GetComponent<Rigidbody2D>();
     }
@@ -30,16 +35,49 @@ public class PlayerController : MonoBehaviour
                 esInvulnerable = false;
             }
         }
+
+        // Llamamos a la lógica de disparar constantemente
+        ManejarDisparo();
     }
 
     void FixedUpdate() {
         rb.MovePosition(rb.position + direccionMovimiento * velocidad * Time.fixedDeltaTime);
     }
 
+    void ManejarDisparo()
+    {
+        cronometroDisparo += Time.deltaTime;
+        
+        // REESCRITURA AGRESIVA POR NIVEL: Dividimos el tiempo base entre el nivel actual
+        float nivelActual = GameManager.Instance != null ? GameManager.Instance.nivelActual : 1f;
+        float cooldownDisparoReal = tiempoEntreDisparosBase / nivelActual;
+
+        // Candado de seguridad para que no intente disparar a ráfaga de 0 segundos y trabe el juego
+        cooldownDisparoReal = Mathf.Max(0.08f, cooldownDisparoReal); 
+
+        // Usa 'cooldownDisparoReal' en tu cronómetro de disparo
+        if (cronometroDisparo >= cooldownDisparoReal)
+        {
+            // Usa 'cooldownDisparoReal' en tu cronómetro de disparo
+        if (cronometroDisparo >= cooldownDisparoReal)
+        {
+            // ====== ¡AQUÍ ESTÁ TU LÍNEA DE DISPARO AUTOMÁTICO! ======
+            if (bala_Prefab != null)
+            {
+                Instantiate(bala_Prefab, transform.position, Quaternion.identity);
+            }
+            // ========================================================
+
+            cronometroDisparo = 0f; // Reiniciamos el cronómetro de la bala
+        }
+
+            cronometroDisparo = 0f; // Reiniciamos el cronómetro de la bala
+        }
+    }
+
     // Detecta cuando un enemigo se queda pegado a nosotros
     void OnCollisionStay2D(Collision2D collision)
     {
-        // Si lo que nos toca tiene la etiqueta "Enemigo" y no somos invulnerables
         if (collision.gameObject.CompareTag("Enemigo") && !esInvulnerable)
         {
             RecibirDano();

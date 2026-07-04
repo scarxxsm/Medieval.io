@@ -6,8 +6,7 @@ public class EnemySpawner : MonoBehaviour
     private Transform jugador;
 
     [Header("Configuración de Tiempo")]
-    public float tiempoRonda = 60f;       
-    public float tiempoEntreSpawns = 2f;  
+    public float tiempoEntreSpawnsBase = 2f; // Cambiado a "Base" para la matemática
 
     [Header("Configuración de Radio")]
     public float radioMinimo = 14f;       
@@ -18,9 +17,7 @@ public class EnemySpawner : MonoBehaviour
     public float limiteX = 18.5f;
     public float limiteY = 18.5f;
 
-    private float cronometroRonda = 0f;
     private float cronometroSpawn = 0f;
-    private bool rondaActiva = true;
 
     void Start()
     {
@@ -35,21 +32,19 @@ public class EnemySpawner : MonoBehaviour
 
     void Update()
     {
-        if (!rondaActiva || jugador == null) return;
+        if (jugador == null) return;
 
-        cronometroRonda += Time.deltaTime;
-        if (cronometroRonda >= tiempoRonda)
-        {
-            rondaActiva = false;
-            Debug.Log("¡Ronda Terminada! Tiempo completado.");
-            return;
-        }
-
+        // BUSCA LA LÍNEA DE TU TEMPORIZADOR, SE DEBE VER ALGO ASÍ EN TU UPDATE:
         cronometroSpawn += Time.deltaTime;
-        if (cronometroSpawn >= tiempoEntreSpawns)
+
+        // Modificación dinámica: El tiempo de espera base se divide entre el nivel actual
+        float nivelActual = GameManager.Instance != null ? GameManager.Instance.nivelActual : 1f;
+        float tiempoSpawnActual = tiempoEntreSpawnsBase / nivelActual;
+
+        if (cronometroSpawn >= tiempoSpawnActual)
         {
             SpawnEnemigoEnRadio();
-            cronometroSpawn = 0f; 
+            cronometroSpawn = 0f;
         }
     }
 

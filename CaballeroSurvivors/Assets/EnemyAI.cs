@@ -2,46 +2,64 @@ using UnityEngine;
 
 public class EnemyAI : MonoBehaviour
 {
-    public float velocidadEnemigo = 3f;
-    
-    [Header("Ajuste de Delay")]
-    public float delayMovimiento = 0.8f; // El enemigo espera antes de moverse
-    private float cronometroDelay = 0f;
-
+    [Header("Configuración Base")]
+    public float velocidadBase = 3.5f; 
+    private float velocidadActual;
     private Transform jugador;
-    private Rigidbody2D rb;
 
     void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
-        
+        // 1. Buscar al jugador automáticamente
         GameObject jugadorObj = GameObject.Find("Jugador");
-        if (jugadorObj != null) jugador = jugadorObj.transform;
-    }
-
-    void FixedUpdate()
-    {
-        // Avanzamos el contador de tiempo
-        cronometroDelay += Time.fixedDeltaTime;
-
-        // Si no ha pasado el delay de 0.8s, se queda quieto
-        if (cronometroDelay < delayMovimiento) return;
-
-        if (jugador != null)
+        if (jugadorObj != null) 
         {
-            Vector2 direccion = ((Vector2)jugador.position - rb.position).normalized;
-            rb.MovePosition(rb.position + direccion * velocidadEnemigo * Time.fixedDeltaTime);
+            jugador = jugadorObj.transform;
+        }
+
+        // 2. Configurar la velocidad inicial
+        velocidadActual = velocidadBase;
+
+        // LÓGICA DE DIFICULTAD Y COLORES POR NIVEL
+        if (GameManager.Instance != null)
+        {
+            int nivel = GameManager.Instance.nivelActual;
+
+            // Aumentar velocidad por nivel
+            velocidadActual += (nivel - 1) * 0.8f; 
+
+            // Cambiar color por nivel
+            SpriteRenderer spriteComp = GetComponent<SpriteRenderer>();
+            if (spriteComp != null)
+            {
+                if (nivel == 2) spriteComp.color = new Color(0.4f, 1f, 0.4f);      // Nivel 2: Verde
+                else if (nivel == 3) spriteComp.color = new Color(0.9f, 0.3f, 1f); // Nivel 3: Morado
+                else if (nivel >= 4) spriteComp.color = new Color(1f, 0.4f, 0.4f); // Nivel 4+:  
+            }
         }
     }
 
-    // --- SISTEMA PARA MORIR ---
+    void Update()
+    {
+        if (jugador == null) return;
+
+        // PERSECUCIÓN
+        transform.position = Vector2.MoveTowards(
+            transform.position, 
+            jugador.position, 
+            velocidadActual * Time.deltaTime
+        );
+    }
+
+    // LÓGICA DE COLISIÓN PARA MORIR Y DESTRUIR BALA
     void OnTriggerEnter2D(Collider2D objetoQueMeToco)
     {
-        // Si lo que tocó al enemigo tiene la etiqueta "Bala"
         if (objetoQueMeToco.CompareTag("Bala"))
         {
-            Destroy(gameObject); // Se destruye el enemigo
-            Destroy(objetoQueMeToco.gameObject); // Se destruye la bala
+            // 1. DESTRUYE LA BALA (¡Ya no la atraviesa infinitamente!)
+            Destroy(objetoQueMeToco.gameObject); 
+
+            // 2. DESTRUYE AL ENEMIGO
+            Destroy(gameObject); 
         }
     }
 }
